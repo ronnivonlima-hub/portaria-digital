@@ -1,4 +1,5 @@
 from datetime import datetime
+from portaria.validacao import cpf_valido, mascarar_documento, normalizar_documento
 
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -89,29 +90,42 @@ class JanelaPrincipal(QWidget):
         self.atualizar_tabela()
 
     def buscar_visitante(self):
-        cpf = somente_digitos(self.campo_cpf.text())
+        cpf = normalizar_documento(self.campo_cpf.text())
         if cpf in self.visitantes:
             self.campo_nome.setText(self.visitantes[cpf])
+            self.campo_nome.setReadOnly(True)
             self.mensagem.setText("Visitante já cadastrado. Escolha o setor.")
+        else:
+            self.campo_nome.setReadOnly(False)
+
 
     def registrar_entrada(self):
-        cpf = somente_digitos(self.campo_cpf.text())
+        cpf = normalizar_documento(self.campo_cpf.text())
         nome = " ".join(self.campo_nome.text().split())
 
-        if len(cpf) != 11:
-            self.mensagem.setText("O CPF precisa ter 11 dígitos.")
+        if not cpf_valido(cpf):
+            self.mensagem.setText("CPF inválido. Confira os 11 dígitos.")
             self.campo_cpf.setFocus()
             return
+        
         if not nome:
             self.mensagem.setText("Informe o nome do visitante.")
             self.campo_nome.setFocus()
             return
+        
         if self.combo_setor.currentIndex() == 0:
             self.mensagem.setText("Selecione o setor de destino.")
             return
+        
+        if any(v["cpf"] == cpf for v in self.presentes()):
+            self.mensagem.setText(f"{nome} já está no prédio. Registre a saída antes.")
+            return
+        
         if not self.crachas_livres:
             self.mensagem.setText("Não há crachá disponível. Aguarde uma devolução.")
             return
+
+        self.visitantes.setdefault(cpf, nome)  # não sobrescreve cadastro existente
 
         self.visitantes[cpf] = nome
         cracha = self.crachas_livres.pop(0)
@@ -156,10 +170,11 @@ class JanelaPrincipal(QWidget):
 
         self.tabela.setRowCount(len(linhas))
         for i, v in enumerate(linhas):
-            valores = [v["id"], self.visitantes[v["cpf"]], v["cpf"],
+            valores = [v["id"], self.visitantes[v["cpf"]], mascarar_documento(v["cpf"]),
                        v["setor"], v["cracha"], v["entrada"]]
             for j, valor in enumerate(valores):
                 self.tabela.setItem(i, j, QTableWidgetItem(str(valor)))
+        self.tabela.setCurrentCell(-1, -1)  # nenhuma visita fica selecionada sem querer
 
         self.contador.setText(
             f"No prédio: {len(self.presentes())} | Crachás livres: {len(self.crachas_livres)}"
