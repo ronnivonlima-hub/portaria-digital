@@ -1,6 +1,6 @@
 from datetime import datetime
+from PyQt5.QtWidgets import QFormLayout
 from portaria.validacao import cpf_valido, mascarar_documento, normalizar_documento
-
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
@@ -117,10 +117,10 @@ class JanelaPrincipal(QWidget):
             self.mensagem.setText("Selecione o setor de destino.")
             return
         
+        # (...) validações de nome e setor continuam iguais
         if any(v["cpf"] == cpf for v in self.presentes()):
             self.mensagem.setText(f"{nome} já está no prédio. Registre a saída antes.")
             return
-        
         if not self.crachas_livres:
             self.mensagem.setText("Não há crachá disponível. Aguarde uma devolução.")
             return
@@ -185,3 +185,14 @@ class JanelaPrincipal(QWidget):
         self.campo_nome.clear()
         self.combo_setor.setCurrentIndex(0)
         self.campo_cpf.setFocus()
+        self.campo_nome.setReadOnly(False)
+        self.campo_nome.clear()
+        self.botao_entrada = QPushButton("&Registrar entrada")                     # Alt+R
+        self.botao_limpar = QPushButton("&Limpar campos")                          # Alt+L
+        self.botao_saida = QPushButton("Registrar &saída da visita selecionada")  # Alt+S
+
+        formulario = QFormLayout()
+        self.formulario = QFormLayout()
+        formulario.addRow("&CPF:", self.campo_cpf)                                 # Alt+C
+        formulario.addRow("&Nome:", self.campo_nome)                               # Alt+N
+        formulario.addRow("S&etor:", self.combo_setor)
