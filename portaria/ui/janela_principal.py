@@ -1,3 +1,4 @@
+import sqlite3
 from datetime import datetime
 from PyQt5.QtWidgets import QFormLayout
 from portaria.validacao import cpf_valido, mascarar_documento, normalizar_documento
@@ -14,6 +15,7 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
+    QMessageBox
 )
 
 SETORES = ["Secretaria", "Coordenação", "Laboratório"]
